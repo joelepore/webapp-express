@@ -1,15 +1,13 @@
 import connection from '../data/db.js';
 
-const index = (req, res) => {
+const index = async (req, res) => {
   const sql = `
-    SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text
+    SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text 
     FROM movies 
-    JOIN reviews ON movies.id = reviews.movie_id;
+    LEFT JOIN reviews ON movies.id = reviews.movie_id
   `;
 
-  connection.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-
+  const aggregateMovies = (results) => {
     const movies = results;
     // Raggruppo i movie in un oggetto che ha come chiave l'id del movie
     const groupedMovies = Object.groupBy(movies, movie => movie.id);
@@ -25,23 +23,30 @@ const index = (req, res) => {
         reviews: movieGroup.map(movie => ({ name: movie.review_name, vote: movie.vote, text: movie.text }))
       }
     })
+    return aggregatedMovies;
+  }
 
-    res.json(aggregatedMovies);
-  });
+  try {
+    const [results] = await connection.query(sql);
+    const movies = aggregateMovies(results);
+    res.json(movies);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+
 }
 
-const show = (req, res) => {
+const show = async (req, res) => {
   const id = req.params.id;
   const sql = `
-  SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text
+  SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text 
   FROM movies
   LEFT JOIN reviews ON movies.id = reviews.movie_id
   WHERE movies.id = ?
   `;
 
-  connection.query(sql, [id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (results.length === 0) return res.status(404).json({ error: 'Movie not found' });
+  const aggregateMovie = (results) => {
+
     // Pulisco l'oggetto movie
     const { review_name, vote, text, ...movie } = results[0];
 
@@ -50,8 +55,17 @@ const show = (req, res) => {
       reviews: results.map(movie => ({ name: movie.review_name, vote: movie.vote, text: movie.text }))
     }
 
-    res.json(aggregatedMovie);
-  })
+    return aggregatedMovie;
+  }
+
+  try {
+    const [results] = await connection.query(sql, [id]);
+    if (results.length === 0) return res.status(404).json({ error: 'Movie not found' });
+    const movie = aggregateMovie(results);
+    res.json(movie);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 }
 
 export default {
