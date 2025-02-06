@@ -42,11 +42,16 @@ const index = async (req, res) => {
     return finalMovies;
   }
 
+  const addImagePaths = (req, movies) => {
+    return movies.map(movie => ({ ...movie, image: req.imagePath + movie.image }));
+  }
+
   try {
     const [results] = await connection.query(sql);
     const [averageVotes] = await connection.query(sqlAverageVote);
     let movies = aggregateMovies(results);
     movies = addAverageVote(movies, averageVotes);
+    movies = addImagePaths(req, movies);
     res.json(movies);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -89,12 +94,21 @@ const show = async (req, res) => {
     }
   }
 
+  const addImagePath = (req, movie) => {
+    return {
+      ...movie,
+      image: req.imagePath + movie.image
+    }
+  }
+
   try {
     const [results] = await connection.query(sql, [id]);
     const [[averageVote]] = await connection.query(sqlAverageVote, [id]);
     if (results.length === 0) return res.status(404).json({ error: 'Movie not found' });
     let movie = aggregateMovie(results);
     movie = addAverageVote(movie, averageVote);
+    console.log(movie);
+    movie = addImagePath(req, movie);
     res.json(movie);
   } catch (err) {
     return res.status(500).json({ error: err.message });

@@ -6,11 +6,14 @@ const port = process.env.PORT;
 // Middlewares
 import errorsHandler from './middlewares/errorsHandler.js';
 import notFoundHandler from './middlewares/notFoundHandler.js';
+import setImagePath from './middlewares/setImagePath.js';
 // Router
 import moviesRouter from './routers/movies.js';
 
 app.use(express.json());
 app.use(express.static('public'));
+
+app.use(setImagePath);
 
 app.get('/', (req, res) => {
   res.send('Movies Server api');
