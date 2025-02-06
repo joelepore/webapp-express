@@ -6,6 +6,12 @@ const index = async (req, res) => {
     FROM movies 
     LEFT JOIN reviews ON movies.id = reviews.movie_id
   `;
+  const sqlAverageVote = `
+    SELECT movies.id, ROUND(AVG(reviews.vote), 1) AS average_vote
+    FROM movies
+    LEFT JOIN reviews ON movies.id = reviews.movie_id
+    GROUP BY movies.id
+  `;
 
   const aggregateMovies = (results) => {
     const movies = results;
@@ -26,9 +32,21 @@ const index = async (req, res) => {
     return aggregatedMovies;
   }
 
+  const addAverageVote = (movies, votes) => {
+    const finalMovies = votes.map(vote => {
+      return {
+        ...movies.find(movie => movie.id === vote.id),
+        average_vote: vote.average_vote
+      }
+    })
+    return finalMovies;
+  }
+
   try {
     const [results] = await connection.query(sql);
-    const movies = aggregateMovies(results);
+    const [averageVotes] = await connection.query(sqlAverageVote);
+    let movies = aggregateMovies(results);
+    movies = addAverageVote(movies, averageVotes);
     res.json(movies);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -45,8 +63,14 @@ const show = async (req, res) => {
   WHERE movies.id = ?
   `;
 
+  const sqlAverageVote = `
+    SELECT movies.id, ROUND(AVG(reviews.vote), 1) AS average_vote
+    FROM movies
+    LEFT JOIN reviews ON movies.id = reviews.movie_id
+    WHERE movies.id = ?
+    GROUP BY movies.id
+  `;
   const aggregateMovie = (results) => {
-
     // Pulisco l'oggetto movie
     const { review_name, vote, text, ...movie } = results[0];
 
@@ -58,10 +82,19 @@ const show = async (req, res) => {
     return aggregatedMovie;
   }
 
+  const addAverageVote = (movie, vote) => {
+    return {
+      ...movie,
+      average_vote: vote.average_vote
+    }
+  }
+
   try {
     const [results] = await connection.query(sql, [id]);
+    const [[averageVote]] = await connection.query(sqlAverageVote, [id]);
     if (results.length === 0) return res.status(404).json({ error: 'Movie not found' });
-    const movie = aggregateMovie(results);
+    let movie = aggregateMovie(results);
+    movie = addAverageVote(movie, averageVote);
     res.json(movie);
   } catch (err) {
     return res.status(500).json({ error: err.message });
