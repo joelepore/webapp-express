@@ -62,10 +62,10 @@ const index = async (req, res) => {
 const show = async (req, res) => {
   const id = req.params.id;
   const sql = `
-  SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text 
-  FROM movies
-  LEFT JOIN reviews ON movies.id = reviews.movie_id
-  WHERE movies.id = ?
+    SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text 
+    FROM movies
+    LEFT JOIN reviews ON movies.id = reviews.movie_id
+    WHERE movies.id = ?
   `;
 
   const sqlAverageVote = `
