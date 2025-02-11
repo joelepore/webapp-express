@@ -62,7 +62,7 @@ const index = async (req, res) => {
 const show = async (req, res) => {
   const id = req.params.id;
   const sql = `
-    SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text 
+    SELECT movies.*, reviews.name AS review_name, reviews.vote, reviews.text, reviews.id AS review_id
     FROM movies
     LEFT JOIN reviews ON movies.id = reviews.movie_id
     WHERE movies.id = ?
@@ -77,11 +77,11 @@ const show = async (req, res) => {
   `;
   const aggregateMovie = (results) => {
     // Pulisco l'oggetto movie
-    const { review_name, vote, text, ...movie } = results[0];
+    const { review_id, review_name, vote, text, ...movie } = results[0];
 
     const aggregatedMovie = {
       ...movie,
-      reviews: results.map(movie => ({ name: movie.review_name, vote: movie.vote, text: movie.text }))
+      reviews: results.map(movie => ({ id: movie.review_id, name: movie.review_name, vote: movie.vote, text: movie.text }))
     }
 
     return aggregatedMovie;
@@ -107,7 +107,6 @@ const show = async (req, res) => {
     if (results.length === 0) return res.status(404).json({ error: 'Movie not found' });
     let movie = aggregateMovie(results);
     movie = addAverageVote(movie, averageVote);
-    console.log(movie);
     movie = addImagePath(req, movie);
     res.json(movie);
   } catch (err) {

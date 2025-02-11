@@ -18,7 +18,6 @@ app.use(cors({
 
 app.get('/', (req, res) => {
   res.send('Movies Server api');
-  console.log(req.imagePath);
 })
 // Uso il middleware setImagePath prima di settare il router movies
 app.use(setImagePath);
