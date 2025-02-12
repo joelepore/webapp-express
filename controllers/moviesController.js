@@ -1,4 +1,8 @@
 import connection from '../data/db.js';
+import path from 'path';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const index = async (req, res) => {
   const sql = `
@@ -147,9 +151,22 @@ const store = async (req, res) => {
 const destroy = async (req, res) => {
   const { id } = req.params;
   const sql = `DELETE FROM movies WHERE id = ?`;
+  const sqlImage = `SELECT image FROM movies WHERE id = ?`;
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  let imagePath = '';
+
+  try {
+    const [result] = await connection.query(sqlImage, [id]);
+    const imageName = result[0].image;
+    imagePath = path.join(__dirname, '../public/img/movies', imageName);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 
   try {
     connection.query(sql, [id]);
+    fs.unlink(imagePath, (err) => console.error(err));
     res.sendStatus(204);
   } catch (err) {
     res.status(500).json({ error: err.message });
