@@ -114,7 +114,24 @@ const show = async (req, res) => {
   }
 }
 
+const storeReview = async (req, res) => {
+  const { id } = req.params;
+  const { name, text, vote } = req.body;
+
+  console.log(name, text, vote);
+
+  const sql = `INSERT INTO reviews (movie_id, name, text, vote) VALUES (?, ?, ?, ?)`;
+
+  try {
+    const results = await connection.query(sql, [id, name, text, vote]);
+    res.sendStatus(201);
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
 export default {
   index,
-  show
+  show,
+  storeReview
 }
