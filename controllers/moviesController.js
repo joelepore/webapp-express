@@ -130,8 +130,36 @@ const storeReview = async (req, res) => {
   }
 }
 
+const store = async (req, res) => {
+  const { title, abstract, director, year, genre } = req.body;
+  const image = req.file.filename;
+
+  const sql = 'INSERT INTO movies (title, abstract, director, release_year, genre, image) VALUES (?, ?, ?, ?, ?, ?)';
+
+  try {
+    connection.query(sql, [title, abstract, director, year, genre, image]);
+    res.sendStatus(201);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+const destroy = async (req, res) => {
+  const { id } = req.params;
+  const sql = `DELETE FROM movies WHERE id = ?`;
+
+  try {
+    connection.query(sql, [id]);
+    res.sendStatus(204);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 export default {
   index,
   show,
-  storeReview
+  storeReview,
+  store,
+  destroy
 }
